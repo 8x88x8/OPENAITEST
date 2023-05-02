@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My JavaScript File</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .container {
+      margin: auto;
+      width: 80%;
+      padding: 20px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f2f2f2;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 80%;
+      border: none;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #3e8e41;
+    }
+
+    .response {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h1>AI Bot</h1>
+  <div class="container">
+    <p>Enter your message:</p>
+    <input type="text" id="userInput">
+    <button onclick="displayResponse()">Send</button>
+    <div class="response" id="response"></div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cheerio@1.0.0/dist/cheerio.min.js"></script>
+
+  <script>
+    // Get references to the HTML elements
+    const userInput = document.getElementById('userInput');
+    const responseDiv = document.getElementById('response');
+
+
+    // Define the function to display the response
+    async function displayResponse() {
+      // Get the user input
+      const input = userInput.value;
+
+      // Call the main function to get the response
+      const response = await main(input);
+
+      // Display the response in the HTML
+      responseDiv.innerText = response;
+    }
+
+    // Define the main function to get a response to a given input phrase
+    async function main(inputPhrase) {
+      // Convert input to lowercase
+      inputPhrase = inputPhrase.toLowerCase();
+
+      // Define default and non-default responses
+      const defaultResponses = await loadResponses('./default_responses.txt');
+
+  
+      //const defaultResponses = await loadResponses('default_responses.txt');
+      const nonDefaultResponses = {
+        'hi': await loadResponses('./hi_responses.txt'),
+        'how are you?': ['I\'m doing well, thank you!', 'I\'m good, how are you?'],
+        'idk': ['what??!!!', 'are you sure??!!'],
+        'what\'s your name': ['My name is AI Bot!', 'People call me AI Bot!'],
+        'yo': null,
+        'bye': ['Goodbye!', 'Bye!'],
+      };
+
+      // Check if the input matches any key in the responses object
+      for (const key in nonDefaultResponses) {
+        if (inputPhrase == key || inputPhrase.includes(key)) {
+          // If a match is found, return a random response from the array of responses
+          if (nonDefaultResponses[key] != null) {
+            const responses = await loadResponses(`${key}_responses.txt`);
+            return responses[Math.floor(Math.random() * responses.length)];
+          } else {
+            try {
+              // Extract random words from a web page
+              const html = await fetch('https://en.wikipedia.org/wiki/Special:Random').then(res => res.text());
+              const $ = cheerio.load(html);
+              const text = $('body').text().trim().split(/\s+/);
+              const numWords = Math.floor(Math.random() * 6) + 3;  // Choose 3 to 8 random words
+              return text.slice(0, numWords).join(' ');
+            } catch (error) {
+              console.log('Error:', error);
+              return 'Sorry, something went wrong. Please try again later.';
+            }
+          }
+        }
+      }
+
+      // If no match is found, return a random default response
+      return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+    }
+
+    // Define a function to load responses from a file
+
+    async function loadResponses(path) {
+        const responseText = await fetch(path).then(response => response.text());
+        if (!response.ok) {
+        throw new Error(`Failed to load responses from ${filename}`);
+        }
+        const text = await response.text();
+        return responseText.split('\n').map(line => line.trim());
+    }
+
+
+  </script>
+</body>
+</html>
+
